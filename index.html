@@ -1,0 +1,577 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>ARSLAN — Modo Repartidor</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/lz-string/1.5.0/lz-string.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+  <style>
+    :root{
+      --bg:#fff; --ink:#111827; --muted:#6b7280; --border:#e5e7eb; --panel:#f8fafc;
+      --kiwi:#16a34a; --kiwi2:#15803d; --bad:#dc2626; --shadow:0 2px 10px rgba(0,0,0,.06);
+    }
+    [data-theme="dark"]{
+      --bg:#0b0f14; --ink:#e5e7eb; --muted:#9aa0a6; --border:#1f2937; --panel:#111827; --shadow:0 2px 12px rgba(0,0,0,.35);
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{margin:0;font-family:Poppins,sans-serif;background:var(--bg);color:var(--ink)}
+    .topbar{
+      position:sticky;top:0;z-index:10;background:var(--bg);border-bottom:1px solid var(--border);
+      padding:10px 12px;display:flex;align-items:center;justify-content:space-between;gap:10px;
+      backdrop-filter:saturate(1.2) blur(6px);
+    }
+    .title{font-weight:700}
+    .pill{font-size:12px;color:var(--muted);border:1px solid var(--border);background:var(--panel);padding:3px 8px;border-radius:999px;white-space:nowrap}
+    .btn{
+      border:1px solid var(--border);background:var(--panel);color:var(--ink);
+      padding:8px 10px;border-radius:12px;cursor:pointer;font-size:13px;
+    }
+    .btn.primary{border:1px solid var(--kiwi);background:linear-gradient(135deg,var(--kiwi) 0%, var(--kiwi2) 100%);color:#fff}
+    .btn.bad{border:1px solid var(--bad);background:var(--bad);color:#fff}
+    .wrap{padding:12px;max-width:980px;margin:0 auto;padding-bottom:86px}
+    .card{border:1px solid var(--border);border-radius:16px;background:var(--bg);box-shadow:var(--shadow);margin-bottom:12px;overflow:hidden}
+    .hd{padding:10px 12px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
+    .bd{padding:10px 12px}
+    .hint{font-size:12px;color:var(--muted)}
+    .destinations{display:flex;gap:8px;flex-wrap:wrap}
+    .chip{
+      border:1px solid var(--border);background:var(--panel);color:var(--ink);
+      padding:8px 10px;border-radius:999px;cursor:pointer;font-size:13px;
+    }
+    .chip.active{border-color:var(--kiwi);background:rgba(22,163,74,.12);color:var(--kiwi)}
+    table{width:100%;border-collapse:collapse}
+    th,td{border-bottom:1px solid var(--border);padding:10px 8px;text-align:left;vertical-align:top}
+    th{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+    .qty{font-weight:700}
+    .row-done td{opacity:.65}
+    .footerbar{
+      position:fixed;left:0;right:0;bottom:0;background:var(--bg);border-top:1px solid var(--border);
+      padding:10px 12px;display:flex;gap:8px;justify-content:space-between;align-items:center;flex-wrap:wrap
+    }
+    .group{display:flex;gap:8px;flex-wrap:wrap}
+    .sep{height:1px;background:var(--border);margin:10px 0}
+    textarea{
+      width:100%;min-height:140px;border:1px solid var(--border);border-radius:12px;padding:10px;
+      background:var(--bg);color:var(--ink);font-size:13px;resize:vertical
+    }
+    input[type="checkbox"]{transform:scale(1.2)}
+    .mini{font-size:12px;color:var(--muted)}
+    .photoPreview{max-width:100%;border-radius:14px;border:1px solid var(--border);display:none;margin-top:8px}
+  </style>
+</head>
+<body>
+  <div class="topbar">
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+      <div class="title">🚚 ARSLAN — Modo Repartidor</div>
+      <span class="pill" id="pillDate"></span>
+      <span class="pill" id="pillCount"></span>
+    </div>
+    <div class="group">
+      <button class="btn" id="btnTheme">🌗 Tema</button>
+      <button class="btn" onclick="openImport()">📥 Importar</button>
+    </div>
+  </div>
+
+  <div class="wrap">
+    <div class="card" id="cardImport" style="display:none">
+      <div class="hd">
+        <strong>📥 Importar reparto (si no viene por link)</strong>
+        <button class="btn" onclick="closeImport()">Cerrar</button>
+      </div>
+      <div class="bd">
+        <div class="hint">Pega aquí el JSON del reparto (te lo puede dar tu app) y pulsa “Cargar”.</div>
+        <textarea id="importTxt" placeholder='{"dateISO":"2026-01-14","destinations":[...]}'></textarea>
+        <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn primary" onclick="importFromTextarea()">Cargar</button>
+          <button class="btn" onclick="clearLocal()">🧹 Limpiar (solo reparto)</button>
+        </div>
+        <div class="mini" style="margin-top:6px">Nota: esto no toca tu vocabulario ni nada. Solo esta página.</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="hd">
+        <strong>📍 Destinos</strong>
+        <span class="hint">Toca un destino para ver su checklist.</span>
+      </div>
+      <div class="bd">
+        <div class="destinations" id="destBar"></div>
+        <div class="sep"></div>
+        <div id="destInfo" class="hint"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="hd">
+        <strong id="destTitle">Checklist</strong>
+        <div class="group">
+          <button class="btn" onclick="toggleAll(true)">✅ Marcar todo</button>
+          <button class="btn" onclick="toggleAll(false)">⬜ Desmarcar todo</button>
+          <button class="btn" onclick="takePhoto()">📸 Foto</button>
+        </div>
+      </div>
+      <div class="bd">
+        <div class="hint">Secciones: <b>Repartido</b> y <b>Pendiente</b> en PDF/WhatsApp.</div>
+        <img id="photoPreview" class="photoPreview" alt="Foto del pedido" />
+        <div id="tableWrap" style="margin-top:10px"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="footerbar">
+    <div class="group">
+      <button class="btn primary" onclick="shareWhatsApp()">📲 WhatsApp</button>
+      <button class="btn" onclick="downloadPDF()">📄 PDF</button>
+      <button class="btn" onclick="copyText()">📋 Copiar texto</button>
+    </div>
+    <div class="group">
+      <span class="pill" id="pillProgress"></span>
+    </div>
+  </div>
+
+  <input id="photoInput" type="file" accept="image/*" capture="environment" style="display:none" />
+
+<script>
+/* =========================
+  UTIL
+========================= */
+const $ = (s)=>document.querySelector(s);
+function todayISO(){ return new Date().toISOString().split('T')[0]; }
+function safeJSONParse(t){ try{ return JSON.parse(t); }catch{ return null; } }
+function b64urlToStr(b64u){
+  const b64 = b64u.replace(/-/g,'+').replace(/_/g,'/');
+  const pad = b64.length % 4 ? '='.repeat(4 - (b64.length%4)) : '';
+  return decodeURIComponent(escape(atob(b64+pad)));
+}
+function strToB64url(str){
+  const b64 = btoa(unescape(encodeURIComponent(str)));
+  return b64.replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+}
+function alertMsg(m){ alert(m); }
+
+/* =========================
+  TEMA
+========================= */
+function applyTheme(t){
+  document.documentElement.setAttribute('data-theme', t==='dark'?'dark':'light');
+  localStorage.setItem('arslan_reparto_theme', t);
+}
+(function(){
+  const saved = localStorage.getItem('arslan_reparto_theme') || 'light';
+  applyTheme(saved);
+  $('#btnTheme').onclick = ()=>{
+    const cur = localStorage.getItem('arslan_reparto_theme') || 'light';
+    applyTheme(cur==='light'?'dark':'light');
+  };
+})();
+
+/* =========================
+  ESTADO (solo de esta página)
+========================= */
+const LS = {
+  LAST: 'arslan_reparto_last_payload',
+  CHECKS: 'arslan_reparto_checks',      // { destId: { itemId: true/false } }
+  PHOTOS: 'arslan_reparto_photos'       // { destId: dataURL }
+};
+
+let payload = null;
+let activeDestId = null;
+
+function getChecks(){ return safeJSONParse(localStorage.getItem(LS.CHECKS)||'{}') || {}; }
+function setChecks(obj){ localStorage.setItem(LS.CHECKS, JSON.stringify(obj||{})); }
+function getPhotos(){ return safeJSONParse(localStorage.getItem(LS.PHOTOS)||'{}') || {}; }
+function setPhotos(obj){ localStorage.setItem(LS.PHOTOS, JSON.stringify(obj||{})); }
+
+/* =========================
+  CARGA POR LINK ?data= (LZString + b64url)
+  Formato recomendado del payload:
+  {
+    dateISO:"2026-01-14",
+    title:"REPARTO",
+    destinations:[
+      { id:"STORE_SP", label:"🏪 San Pablo", lines:[{id:"x1", name:"TOMATE", qty:3}] },
+      { id:"CLI_BRASEROS_FORUM", label:"🏨 Braseros — Forum", lines:[...] }
+    ]
+  }
+========================= */
+function loadFromURL(){
+  const u = new URL(location.href);
+  const data = u.searchParams.get('data');
+  if(!data) return null;
+
+  // data = b64url( LZString.compressToUTF16(json) ) también valdría,
+  // pero aquí usamos: b64url( jsonCompressed ) simple:
+  // -> (más robusto) b64url(LZString.compressToBase64(json))… pero Base64 ya…
+  // Usamos: b64url( LZString.compressToEncodedURIComponent(json) ) (aún mejor)
+  try{
+    // si viene como encodedURIComponent compressed:
+    const json = LZString.decompressFromEncodedURIComponent(data);
+    if(json){
+      return safeJSONParse(json);
+    }
+  }catch{}
+
+  // fallback b64url de JSON puro
+  try{
+    const raw = b64urlToStr(data);
+    const obj = safeJSONParse(raw);
+    if(obj) return obj;
+  }catch{}
+  return null;
+}
+
+function loadFromLocal(){
+  const raw = localStorage.getItem(LS.LAST);
+  if(!raw) return null;
+  return safeJSONParse(raw);
+}
+
+function setPayload(obj){
+  payload = obj;
+  localStorage.setItem(LS.LAST, JSON.stringify(obj));
+  renderAll();
+}
+
+function openImport(){ $('#cardImport').style.display='block'; }
+function closeImport(){ $('#cardImport').style.display='none'; }
+function importFromTextarea(){
+  const obj = safeJSONParse($('#importTxt').value||'');
+  if(!obj || !Array.isArray(obj.destinations)){ alertMsg('JSON inválido o sin destinations.'); return; }
+  setPayload(obj);
+  closeImport();
+}
+function clearLocal(){
+  if(!confirm('¿Limpiar checks/fotos/reparto guardado en este móvil?')) return;
+  localStorage.removeItem(LS.LAST);
+  localStorage.removeItem(LS.CHECKS);
+  localStorage.removeItem(LS.PHOTOS);
+  alertMsg('Reparto local limpiado.');
+  location.href = location.pathname; // sin query
+}
+
+/* =========================
+  RENDER
+========================= */
+function renderAll(){
+  const date = (payload && payload.dateISO) ? payload.dateISO : todayISO();
+  $('#pillDate').textContent = `📅 ${date}`;
+
+  const dests = (payload && Array.isArray(payload.destinations)) ? payload.destinations : [];
+  $('#pillCount').textContent = `Destinos: ${dests.length}`;
+
+  renderDestBar(dests);
+
+  if(!activeDestId && dests.length) activeDestId = dests[0].id;
+  if(activeDestId) renderActive();
+  else {
+    $('#destInfo').textContent = 'No hay destinos. Importa reparto o usa un link generado por la app.';
+    $('#tableWrap').innerHTML = '<div class="hint">Sin datos.</div>';
+    $('#pillProgress').textContent = '0/0';
+  }
+}
+
+function renderDestBar(dests){
+  const bar = $('#destBar');
+  bar.innerHTML = '';
+  if(!dests.length){
+    bar.innerHTML = '<span class="hint">Sin destinos todavía.</span>';
+    return;
+  }
+  dests.forEach(d=>{
+    const b = document.createElement('button');
+    b.className = 'chip' + (d.id===activeDestId ? ' active':'');
+    b.textContent = d.label || d.id;
+    b.onclick = ()=>{ activeDestId = d.id; renderAll(); };
+    bar.appendChild(b);
+  });
+}
+
+function getActiveDest(){
+  if(!payload || !payload.destinations) return null;
+  return payload.destinations.find(d=>d.id===activeDestId) || null;
+}
+
+function renderActive(){
+  const d = getActiveDest();
+  if(!d){ $('#tableWrap').innerHTML = '<div class="hint">Destino no encontrado.</div>'; return; }
+
+  $('#destTitle').textContent = d.label || d.id;
+  $('#destInfo').textContent = `Líneas: ${(d.lines||[]).length}`;
+
+  // foto preview
+  const photos = getPhotos();
+  const img = $('#photoPreview');
+  if(photos[d.id]){
+    img.src = photos[d.id];
+    img.style.display = 'block';
+  }else{
+    img.src = '';
+    img.style.display = 'none';
+  }
+
+  const checks = getChecks();
+  const destChecks = checks[d.id] || {};
+
+  const lines = Array.isArray(d.lines) ? d.lines : [];
+  let done = 0;
+  let html = '<table><thead><tr><th></th><th>Producto</th><th>Cant.</th></tr></thead><tbody>';
+  lines.forEach((it)=>{
+    const itemId = it.id || (it.name + '|' + it.qty);
+    const isChecked = !!destChecks[itemId];
+    if(isChecked) done++;
+    html += `
+      <tr class="${isChecked?'row-done':''}">
+        <td style="width:44px">
+          <input type="checkbox" ${isChecked?'checked':''}
+            onchange="toggleItem('${d.id}', '${cssEscape(itemId)}', this.checked)">
+        </td>
+        <td>${escapeHtml(it.name||'')}</td>
+        <td class="qty">${escapeHtml(String(it.qty??''))}</td>
+      </tr>
+    `;
+  });
+  html += '</tbody></table>';
+  $('#tableWrap').innerHTML = html;
+
+  $('#pillProgress').textContent = `${done}/${lines.length} marcados`;
+}
+
+/* helpers safe */
+function escapeHtml(s){
+  return String(s||'').replace(/[&<>"']/g, m=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[m]));
+}
+function cssEscape(s){
+  return String(s).replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+}
+
+/* =========================
+  CHECKS
+========================= */
+function toggleItem(destId, itemIdEscaped, checked){
+  // itemIdEscaped viene escapado para HTML, lo recuperamos simple:
+  const itemId = itemIdEscaped.replace(/\\'/g,"'").replace(/\\\\/g,'\\');
+
+  const checks = getChecks();
+  if(!checks[destId]) checks[destId] = {};
+  checks[destId][itemId] = !!checked;
+  setChecks(checks);
+  renderActive();
+}
+
+function toggleAll(flag){
+  const d = getActiveDest();
+  if(!d) return;
+  const checks = getChecks();
+  if(!checks[d.id]) checks[d.id] = {};
+  const destChecks = checks[d.id];
+  (d.lines||[]).forEach(it=>{
+    const itemId = it.id || (it.name + '|' + it.qty);
+    destChecks[itemId] = !!flag;
+  });
+  checks[d.id] = destChecks;
+  setChecks(checks);
+  renderActive();
+}
+
+/* =========================
+  FOTO (OPCIONAL)
+========================= */
+function takePhoto(){
+  const d = getActiveDest();
+  if(!d){ alertMsg('Selecciona un destino.'); return; }
+  const inp = $('#photoInput');
+  inp.value = '';
+  inp.onchange = async ()=>{
+    const file = inp.files && inp.files[0];
+    if(!file) return;
+
+    // convert to dataURL (simple)
+    const reader = new FileReader();
+    reader.onload = ()=>{
+      const photos = getPhotos();
+      photos[d.id] = reader.result; // dataURL
+      setPhotos(photos);
+      renderActive();
+      alertMsg('Foto guardada en este móvil para este destino.');
+    };
+    reader.readAsDataURL(file);
+  };
+  inp.click();
+}
+
+/* =========================
+  PDF (Repartido / Pendiente)
+========================= */
+function buildListsForActive(){
+  const d = getActiveDest();
+  if(!d) return { d:null, done:[], pending:[] };
+
+  const checks = getChecks();
+  const destChecks = checks[d.id] || {};
+
+  const done = [];
+  const pending = [];
+  (d.lines||[]).forEach(it=>{
+    const itemId = it.id || (it.name + '|' + it.qty);
+    const row = { name: it.name||'', qty: it.qty??'' };
+    if(destChecks[itemId]) done.push(row); else pending.push(row);
+  });
+  return { d, done, pending };
+}
+
+async function makePDFBlob(){
+  const { d, done, pending } = buildListsForActive();
+  if(!d){ alertMsg('Selecciona un destino.'); return null; }
+
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({unit:'pt', format:'a4'});
+  const margin = 36;
+  let y = margin;
+
+  doc.setFont('helvetica','bold');
+  doc.setFontSize(14);
+  doc.text(`REPARTO — ${d.label || d.id}`, margin, y); y += 18;
+
+  doc.setFont('helvetica','normal');
+  doc.setFontSize(10);
+  doc.text(`Fecha: ${(payload && payload.dateISO) ? payload.dateISO : todayISO()}`, margin, y); y += 14;
+
+  doc.setFont('helvetica','bold'); doc.setFontSize(12);
+  doc.text(`REPARTIDO (${done.length})`, margin, y); y += 8;
+
+  doc.autoTable({
+    startY: y,
+    head: [['Producto','Cantidad']],
+    body: done.map(x=>[String(x.name), String(x.qty)]),
+    styles: { fontSize: 9, cellPadding: 6 },
+    headStyles: { fillColor: [22,163,74] },
+    margin: { left: margin, right: margin }
+  });
+  y = doc.lastAutoTable.finalY + 16;
+
+  doc.setFont('helvetica','bold'); doc.setFontSize(12);
+  doc.text(`PENDIENTE (${pending.length})`, margin, y); y += 8;
+
+  doc.autoTable({
+    startY: y,
+    head: [['Producto','Cantidad']],
+    body: pending.map(x=>[String(x.name), String(x.qty)]),
+    styles: { fontSize: 9, cellPadding: 6 },
+    headStyles: { fillColor: [220,38,38] },
+    margin: { left: margin, right: margin }
+  });
+
+  return doc.output('blob');
+}
+
+async function downloadPDF(){
+  const blob = await makePDFBlob();
+  if(!blob) return;
+  const d = getActiveDest();
+  const name = (d && (d.label||d.id)) ? (d.label||d.id).replace(/[^\w\s\-áéíóúÁÉÍÓÚñÑ]/g,'').trim() : 'destino';
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `reparto_${name}_${(payload&&payload.dateISO)?payload.dateISO:todayISO()}.pdf`;
+  a.click();
+}
+
+/* =========================
+  WHATSAPP (compartir PDF + foto si el móvil lo permite)
+  Nota: no se puede "forzar" enviar a un número con adjunto desde web.
+========================= */
+async function shareWhatsApp(){
+  const d = getActiveDest();
+  if(!d){ alertMsg('Selecciona un destino.'); return; }
+
+  const blob = await makePDFBlob();
+  if(!blob) return;
+
+  const photos = getPhotos();
+  const photoDataURL = photos[d.id] || null;
+  const files = [];
+
+  const safeName = (d.label||d.id).replace(/[^\w\s\-áéíóúÁÉÍÓÚñÑ]/g,'').trim() || 'destino';
+  files.push(new File([blob], `reparto_${safeName}_${(payload&&payload.dateISO)?payload.dateISO:todayISO()}.pdf`, {type:'application/pdf'}));
+
+  if(photoDataURL){
+    const photoBlob = dataURLtoBlob(photoDataURL);
+    files.push(new File([photoBlob], `foto_${safeName}_${(payload&&payload.dateISO)?payload.dateISO:todayISO()}.jpg`, {type:'image/jpeg'}));
+  }
+
+  const { done, pending } = buildListsForActive();
+  const msg = `🚚 Reparto ${d.label||d.id} — ${(payload&&payload.dateISO)?payload.dateISO:todayISO()}\n✅ Repartido: ${done.length}\n⏳ Pendiente: ${pending.length}`;
+
+  // Web Share (móvil): adjunta archivos y eliges WhatsApp
+  if(navigator.canShare && navigator.canShare({files})){
+    try{
+      await navigator.share({ files, text: msg, title: `Reparto ${d.label||d.id}` });
+      return;
+    }catch(e){
+      // usuario canceló o fallo
+    }
+  }
+
+  // fallback: abre WhatsApp con texto (sin adjuntos) + descarga PDF
+  await downloadPDF();
+  window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
+}
+
+function dataURLtoBlob(dataURL){
+  const parts = dataURL.split(',');
+  const mime = parts[0].match(/:(.*?);/)[1] || 'image/jpeg';
+  const bstr = atob(parts[1]);
+  let n = bstr.length;
+  const u8 = new Uint8Array(n);
+  while(n--) u8[n] = bstr.charCodeAt(n);
+  return new Blob([u8], {type:mime});
+}
+
+/* =========================
+  COPIAR TEXTO (repartido + pendiente)
+========================= */
+function copyText(){
+  const d = getActiveDest();
+  if(!d){ alertMsg('Selecciona un destino.'); return; }
+  const { done, pending } = buildListsForActive();
+
+  let out = `REPARTO — ${d.label||d.id} (${(payload&&payload.dateISO)?payload.dateISO:todayISO()})\n\n`;
+  out += `REPARTIDO:\n`;
+  if(done.length) done.forEach(x=> out += `- ${x.qty} ${x.name}\n`);
+  else out += `- (nada)\n`;
+  out += `\nPENDIENTE:\n`;
+  if(pending.length) pending.forEach(x=> out += `- ${x.qty} ${x.name}\n`);
+  else out += `- (nada)\n`;
+
+  navigator.clipboard.writeText(out);
+  alertMsg('Texto copiado.');
+}
+
+/* =========================
+  INIT
+========================= */
+(function init(){
+  // 1) intentar URL
+  const fromURL = loadFromURL();
+  if(fromURL && Array.isArray(fromURL.destinations)){
+    setPayload(fromURL);
+  }else{
+    // 2) intentar local
+    const fromLocal = loadFromLocal();
+    if(fromLocal && Array.isArray(fromLocal.destinations)){
+      payload = fromLocal;
+      renderAll();
+    }else{
+      // 3) vacío -> pedir importar
+      payload = { dateISO: todayISO(), title:'REPARTO', destinations:[] };
+      renderAll();
+      openImport();
+    }
+  }
+})();
+</script>
+</body>
+</html>

@@ -37,16 +37,14 @@
       display:flex; align-items:center; justify-content:space-between; gap:10px;
       padding:10px 12px; backdrop-filter:saturate(1.2) blur(6px);
     }
-    .title{
-      display:flex; flex-direction:column; gap:2px;
-      line-height:1.1;
-    }
+    .title{ display:flex; flex-direction:column; gap:2px; line-height:1.1; }
     .title b{font-size:15px}
     .title span{font-size:12px; color:var(--muted)}
     .btn{
       border:1px solid var(--border); background:var(--panel);
       color:var(--ink); padding:8px 10px; border-radius:12px;
       cursor:pointer; font-size:13px;
+      white-space:nowrap;
     }
     .btn.primary{
       border:1px solid var(--kiwi);
@@ -84,12 +82,8 @@
     [data-theme="dark"] .pill.ok{ background:#052e1a; border-color:#14532d; color:#86efac; }
     [data-theme="dark"] .pill.bad{ background:#2b0d0d; border-color:#7f1d1d; color:#fecaca; }
 
-    .dest-grid{
-      display:grid; grid-template-columns:1fr; gap:12px;
-    }
-    @media(min-width:900px){
-      .dest-grid{ grid-template-columns:1fr 1fr; }
-    }
+    .dest-grid{ display:grid; grid-template-columns:1fr; gap:12px; }
+    @media(min-width:900px){ .dest-grid{ grid-template-columns:1fr 1fr; } }
 
     table{ width:100%; border-collapse:collapse; }
     th,td{ border-bottom:1px solid var(--border); padding:10px 8px; vertical-align:top; }
@@ -98,31 +92,21 @@
     .muted{ color:var(--muted); font-size:12px; }
     .row-actions{ display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
 
-    .check{
-      width:18px; height:18px; accent-color: var(--kiwi);
-      transform: translateY(2px);
-    }
+    .check{ width:18px; height:18px; accent-color: var(--kiwi); transform: translateY(2px); }
 
     .photo-wrap{
       display:flex; flex-direction:column; gap:10px;
       border-top:1px dashed var(--border);
       margin-top:10px; padding-top:10px;
     }
-    .photos{
-      display:grid; grid-template-columns:repeat(3, 1fr); gap:8px;
-    }
-    @media(min-width:700px){
-      .photos{ grid-template-columns:repeat(4, 1fr); }
-    }
+    .photos{ display:grid; grid-template-columns:repeat(3, 1fr); gap:8px; }
+    @media(min-width:700px){ .photos{ grid-template-columns:repeat(4, 1fr); } }
     .ph{
       border:1px solid var(--border); border-radius:12px;
       background:var(--panel); overflow:hidden; position:relative;
-      min-height:82px;
-      display:flex; align-items:center; justify-content:center;
+      min-height:82px; display:flex; align-items:center; justify-content:center;
     }
-    .ph img{
-      width:100%; height:100%; object-fit:cover; display:block;
-    }
+    .ph img{ width:100%; height:100%; object-fit:cover; display:block; }
     .ph .rm{
       position:absolute; top:6px; right:6px;
       border:none; background:rgba(0,0,0,.55); color:#fff;
@@ -130,17 +114,13 @@
       font-size:14px;
     }
 
-    /* Panel resumen */
-    .summary{
-      display:none;
-    }
+    .summary{ display:none; }
     .summary.show{ display:block; }
     .summary h2{ margin:0 0 6px; font-size:16px; }
     .summary .sub{ margin:0 0 10px; color:var(--muted); font-size:12px; }
     .grid2{ display:grid; grid-template-columns:1fr; gap:12px; }
     @media(min-width:900px){ .grid2{ grid-template-columns:1fr 1fr; } }
 
-    /* Para imprimir como PDF */
     @media print{
       .topbar, .no-print{ display:none !important; }
       body{ background:#fff; color:#000; }
@@ -152,24 +132,31 @@
     }
   </style>
 </head>
+
 <body>
   <div class="topbar no-print">
     <div class="title">
       <b>🚚 ARSLAN REPARTO — Repartidor</b>
       <span id="metaLine">Cargando…</span>
     </div>
+
     <div class="row-actions">
       <button class="btn" onclick="toggleTheme()">🌗 Tema</button>
       <button class="btn" onclick="expandAll(true)">⬇️ Abrir todo</button>
       <button class="btn" onclick="expandAll(false)">⬆️ Cerrar todo</button>
+
       <button class="btn danger" onclick="limpiarRepartoHoy()">🧹 Limpiar reparto de hoy</button>
-      <button class="btn primary" onclick="finalizarReparto()">✅ Finalizar reparto</button>
-      <button class="btn" onclick="imprimirPDF()">🧾 PDF (Imprimir)</button>
+
+      <button class="btn primary" onclick="finalizarReparto()">✅ Finalizar</button>
+      <button class="btn" onclick="imprimirPDF()">🧾 PDF</button>
+
+      <button class="btn" onclick="copiarResumen()">📋 Copiar resumen</button>
+      <button class="btn primary" onclick="enviarWhatsAppResumen()">📲 WhatsApp +612269440</button>
     </div>
   </div>
 
   <div class="container">
-    <div class="card no-print" id="helpCard">
+    <div class="card no-print">
       <div class="hd">
         <strong>Cómo usar</strong>
         <span class="pill" id="persistPill">💾 Guardando…</span>
@@ -177,17 +164,18 @@
       <div class="bd">
         <div class="muted">
           ✅ Se guarda solo en el móvil (checks + fotos).<br>
-          1) Marca ✔ lo bajado (repartido). <br>
-          2) (Opcional) añade fotos por destino. <br>
-          3) Pulsa <b>Finalizar reparto</b> para ver el resumen global (bajado + pendiente + fotos). <br>
-          4) Pulsa <b>PDF (Imprimir)</b> para guardar como PDF con fotos incrustadas.
+          1) Marca ✔ lo bajado (repartido).<br>
+          2) (Opcional) añade fotos por destino.<br>
+          3) Pulsa <b>Finalizar</b> para ver el resumen global (bajado + pendiente + fotos).<br>
+          4) Pulsa <b>PDF</b> para guardarlo como PDF con fotos incrustadas.<br><br>
+          📲 WhatsApp abre el chat con el mensaje listo. Para adjuntar el PDF: en WhatsApp → clip → Documento → selecciona el PDF.
         </div>
       </div>
     </div>
 
     <div class="dest-grid no-print" id="destWrap"></div>
 
-    <!-- ✅ RESUMEN GLOBAL -->
+    <!-- RESUMEN GLOBAL -->
     <div class="card summary" id="summaryCard">
       <div class="hd">
         <strong>📌 Resumen final</strong>
@@ -214,7 +202,6 @@
         </div>
       </div>
     </div>
-
   </div>
 
 <script>
@@ -236,14 +223,10 @@ function toggleTheme(){
 const byId = (id)=>document.getElementById(id);
 const esc = (s)=>String(s||'').replace(/[&<>"']/g, m=>({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[m]));
 function todayISO(){ return new Date().toISOString().split('T')[0]; }
+function safeJsonParse(s){ try{ return JSON.parse(s); }catch{ return null; } }
 
 /* ==========================
    Estado (repartidor)
-   payload esperado:
-   {
-     dateISO, title,
-     destinations: [{ id,label, lines:[{id,name,qty}] }]
-   }
 ========================== */
 let payload = null;
 
@@ -252,21 +235,23 @@ const deliveryState = {};
 // photosState[destId] = [{name, dataUrl}]
 const photosState = {};
 
-// UI Persist pill
+// Último resumen calculado (para WhatsApp/copiar)
+let LAST_SUMMARY = null;
+
+/* ==========================
+   Persist pill
+========================== */
 function setPersist(text){
   const p = byId('persistPill');
   if(p) p.textContent = text;
 }
 
 /* ==========================
-   Persistencia localStorage (por día / reparto)
+   Persistencia localStorage (por reparto)
 ========================== */
 const LS_PREFIX = 'arslan_reparto_v1';
-function safeJsonParse(s){
-  try{ return JSON.parse(s); }catch{ return null; }
-}
+
 function computeRepartoKey(){
-  // Key depende del día + título (y cantidad destinos) para evitar mezclar repartos
   const date = payload?.dateISO || todayISO();
   const title = (payload?.title || 'REPARTO').slice(0,60);
   const dcount = (payload?.destinations?.length || 0);
@@ -275,12 +260,7 @@ function computeRepartoKey(){
 function persistNow(){
   if(!payload) return;
   const key = computeRepartoKey();
-  const obj = {
-    v:1,
-    savedAt: Date.now(),
-    deliveryState,
-    photosState
-  };
+  const obj = { v:1, savedAt: Date.now(), deliveryState, photosState };
   try{
     localStorage.setItem(key, JSON.stringify(obj));
     setPersist('💾 Guardado');
@@ -302,7 +282,6 @@ function loadPersisted(){
   const obj = safeJsonParse(raw);
   if(!obj || !obj.deliveryState || !obj.photosState) return false;
 
-  // merge seguro (no romper aunque cambien líneas)
   Object.keys(obj.deliveryState).forEach(destId=>{
     if(!deliveryState[destId]) deliveryState[destId] = {};
     const map = obj.deliveryState[destId] || {};
@@ -310,43 +289,40 @@ function loadPersisted(){
       deliveryState[destId][lineId] = !!map[lineId];
     });
   });
+
   Object.keys(obj.photosState).forEach(destId=>{
-    if(!photosState[destId]) photosState[destId] = [];
     const arr = Array.isArray(obj.photosState[destId]) ? obj.photosState[destId] : [];
-    // validamos dataUrl básico
-    photosState[destId] = arr.filter(x=>x && typeof x.dataUrl==='string' && x.dataUrl.startsWith('data:image/')).map(x=>({
-      name: String(x.name||'foto'),
-      dataUrl: x.dataUrl
-    }));
+    photosState[destId] = arr
+      .filter(x=>x && typeof x.dataUrl==='string' && x.dataUrl.startsWith('data:image/'))
+      .map(x=>({ name: String(x.name||'foto'), dataUrl: x.dataUrl }));
   });
 
   setPersist('💾 Reparto recuperado');
   return true;
 }
+
 function limpiarRepartoHoy(){
   if(!payload){ alert('Sin datos.'); return; }
-  if(!confirm('¿Seguro? Esto borra checks y fotos SOLO de este reparto de hoy.')) return;
+  if(!confirm('¿Seguro? Esto borra checks y fotos SOLO de este reparto.')) return;
 
-  // reset states según payload actual
   payload.destinations.forEach(d=>{
     deliveryState[d.id] = {};
     photosState[d.id] = [];
     d.lines.forEach(ln=> deliveryState[d.id][ln.id] = false);
   });
 
-  // borrar key
   const key = computeRepartoKey();
   localStorage.removeItem(key);
 
-  // ocultar resumen si estaba
   byId('summaryCard').classList.remove('show');
+  LAST_SUMMARY = null;
 
   setPersist('🧹 Reparto limpio');
   render();
 }
 
 /* ==========================
-   Payload decode
+   Payload decode (?data=)
 ========================== */
 function getUrlDataParam(){
   const u = new URL(location.href);
@@ -395,7 +371,7 @@ function render(){
   const wrap = byId('destWrap');
   wrap.innerHTML = '';
 
-  payload.destinations.forEach((d,di)=>{
+  payload.destinations.forEach(d=>{
     const totalLines = d.lines.length;
     const done = d.lines.filter(ln => deliveryState[d.id]?.[ln.id]).length;
 
@@ -420,7 +396,7 @@ function render(){
     bd.id = `bd_${d.id}`;
 
     bd.innerHTML = `
-      <div class="muted" style="margin-bottom:8px">Marca lo bajado. Lo no marcado quedará como pendiente en el resumen.</div>
+      <div class="muted" style="margin-bottom:8px">Marca lo bajado. Lo no marcado quedará como pendiente.</div>
       <div style="overflow-x:auto">
         <table>
           <thead>
@@ -506,7 +482,7 @@ function markAll(destId, val){
 }
 
 /* ==========================
-   Fotos (persistente) por destino
+   Fotos (persistente)
 ========================== */
 function onAddPhotos(destId, files){
   if(!files || !files.length) return;
@@ -533,7 +509,6 @@ function onAddPhotos(destId, files){
   }
   next();
 }
-
 function renderPhotos(destId){
   const box = byId(`ph_${destId}`);
   if(!box) return;
@@ -553,7 +528,6 @@ function renderPhotos(destId){
     box.appendChild(d);
   });
 }
-
 function removePhoto(destId, idx){
   const list = photosState[destId] || [];
   list.splice(idx,1);
@@ -561,7 +535,6 @@ function removePhoto(destId, idx){
   renderPhotos(destId);
   persistSoon();
 }
-
 function clearPhotos(destId){
   if(!confirm('¿Borrar todas las fotos de este destino?')) return;
   photosState[destId] = [];
@@ -570,42 +543,51 @@ function clearPhotos(destId){
 }
 
 /* ==========================
-   ✅ FINALIZAR REPARTO
-   Resumen global: bajado + pendiente + fotos (todos destinos)
+   Construir resumen (para UI + WhatsApp + copiar)
 ========================== */
-function finalizarReparto(){
-  if(!payload){ alert('Sin datos.'); return; }
+function buildSummary(){
+  if(!payload) return null;
 
-  const delivered = []; // {dest,label,name,qty}
+  const delivered = []; // {destLabel,name,qty}
   const pending = [];
-  const photosAll = []; // {dest,label,dataUrl}
+  const photosAll = []; // {destLabel,dataUrl,name}
 
   payload.destinations.forEach(d=>{
     d.lines.forEach(ln=>{
       const ok = !!deliveryState[d.id]?.[ln.id];
-      const row = { destId:d.id, destLabel:d.label, name:ln.name, qty:ln.qty };
+      const row = { destLabel:d.label, name:ln.name, qty:ln.qty };
       if(ok) delivered.push(row);
       else pending.push(row);
     });
 
     (photosState[d.id] || []).forEach(ph=>{
-      photosAll.push({ destId:d.id, destLabel:d.label, dataUrl:ph.dataUrl, name:ph.name });
+      photosAll.push({ destLabel:d.label, dataUrl:ph.dataUrl, name:ph.name });
     });
   });
 
-  byId('summaryPill').textContent = `✅ Bajado ${delivered.length} · ⏳ Pendiente ${pending.length} · 📷 Fotos ${photosAll.length}`;
-  byId('sumTitle').textContent = payload.title || 'REPARTO';
-  byId('sumSub').textContent = `${payload.dateISO || todayISO()} · Destinos ${payload.destinations.length}`;
+  return {
+    title: payload.title || 'REPARTO',
+    dateISO: payload.dateISO || todayISO(),
+    destinationsCount: payload.destinations.length,
+    delivered,
+    pending,
+    photosAll
+  };
+}
 
-  byId('delCount').textContent = delivered.length;
-  byId('pendCount').textContent = pending.length;
+function renderSummaryUI(sum){
+  byId('summaryPill').textContent = `✅ Bajado ${sum.delivered.length} · ⏳ Pendiente ${sum.pending.length} · 📷 Fotos ${sum.photosAll.length}`;
+  byId('sumTitle').textContent = sum.title;
+  byId('sumSub').textContent = `${sum.dateISO} · Destinos ${sum.destinationsCount}`;
 
-  byId('deliveredBox').innerHTML = renderSummaryTable(delivered, true);
-  byId('pendingBox').innerHTML = renderSummaryTable(pending, false);
-  byId('photosAllBox').innerHTML = renderPhotosAll(photosAll);
+  byId('delCount').textContent = sum.delivered.length;
+  byId('pendCount').textContent = sum.pending.length;
+
+  byId('deliveredBox').innerHTML = renderSummaryTable(sum.delivered, true);
+  byId('pendingBox').innerHTML = renderSummaryTable(sum.pending, false);
+  byId('photosAllBox').innerHTML = renderPhotosAll(sum.photosAll);
 
   byId('summaryCard').classList.add('show');
-  byId('summaryCard').scrollIntoView({behavior:'smooth', block:'start'});
 }
 
 function renderSummaryTable(rows, isOk){
@@ -627,9 +609,7 @@ function renderSummaryTable(rows, isOk){
       <div class="bd" style="padding:0 10px 10px">
         <div style="overflow-x:auto">
           <table>
-            <thead>
-              <tr><th>Producto</th><th style="width:120px">Cantidad</th></tr>
-            </thead>
+            <thead><tr><th>Producto</th><th style="width:120px">Cantidad</th></tr></thead>
             <tbody>
               ${items.map(x=>`<tr><td>${esc(x.name)}</td><td><b>${esc(x.qty)}</b></td></tr>`).join('')}
             </tbody>
@@ -640,7 +620,6 @@ function renderSummaryTable(rows, isOk){
   }
   return out;
 }
-
 function renderPhotosAll(list){
   if(!list.length) return `<div class="muted">Sin fotos.</div>`;
 
@@ -668,13 +647,98 @@ function renderPhotosAll(list){
 }
 
 /* ==========================
-   PDF (Imprimir)
+   Finalizar / PDF
 ========================== */
+function finalizarReparto(){
+  if(!payload){ alert('Sin datos.'); return; }
+  const sum = buildSummary();
+  LAST_SUMMARY = sum;
+  renderSummaryUI(sum);
+  byId('summaryCard').scrollIntoView({behavior:'smooth', block:'start'});
+}
 function imprimirPDF(){
   if(payload && !byId('summaryCard').classList.contains('show')){
     finalizarReparto();
   }
   window.print();
+}
+
+/* ==========================
+   WhatsApp + Copiar resumen
+========================== */
+function buildWhatsAppText(sum){
+  // Mensajes largos se pueden cortar en WhatsApp. Aquí usamos un límite seguro aproximado.
+  const MAX = 3200;
+
+  function groupLines(rows){
+    const map = new Map();
+    rows.forEach(r=>{
+      if(!map.has(r.destLabel)) map.set(r.destLabel, []);
+      map.get(r.destLabel).push(r);
+    });
+    return map;
+  }
+
+  let text = '';
+  text += `🚚 *${sum.title}*\n`;
+  text += `📅 ${sum.dateISO}\n`;
+  text += `📍 Destinos: ${sum.destinationsCount}\n`;
+  text += `✅ Bajado: ${sum.delivered.length}\n`;
+  text += `⏳ Pendiente: ${sum.pending.length}\n`;
+  text += `📷 Fotos: ${sum.photosAll.length}\n\n`;
+
+  text += `✅ *BAJADO*\n`;
+  const g1 = groupLines(sum.delivered);
+  for(const [label, items] of g1.entries()){
+    text += `\n*${label}*\n`;
+    items.forEach(it=>{ text += `- ${it.qty} ${it.name}\n`; });
+    if(text.length > MAX) break;
+  }
+
+  if(text.length <= MAX){
+    text += `\n⏳ *PENDIENTE*\n`;
+    const g2 = groupLines(sum.pending);
+    for(const [label, items] of g2.entries()){
+      text += `\n*${label}*\n`;
+      items.forEach(it=>{ text += `- ${it.qty} ${it.name}\n`; });
+      if(text.length > MAX) break;
+    }
+  }
+
+  if(text.length > MAX){
+    text = text.slice(0, MAX);
+    text += `\n\n⚠️ Mensaje recortado por longitud. El PDF contiene el informe completo con fotos.`;
+  }else{
+    text += `\n🧾 PDF: adjunto informe completo con fotos (generado desde la app).`;
+  }
+  return text;
+}
+
+function enviarWhatsAppResumen(){
+  if(!payload){ alert('Sin datos.'); return; }
+  if(!byId('summaryCard').classList.contains('show')){
+    finalizarReparto();
+  }
+  const sum = LAST_SUMMARY || buildSummary();
+  LAST_SUMMARY = sum;
+
+  const phone = '612269440'; // sin +
+  const msg = encodeURIComponent(buildWhatsAppText(sum));
+  // abre chat con número
+  window.open(`https://wa.me/${phone}?text=${msg}`, '_blank');
+}
+
+function copiarResumen(){
+  if(!payload){ alert('Sin datos.'); return; }
+  if(!byId('summaryCard').classList.contains('show')){
+    finalizarReparto();
+  }
+  const sum = LAST_SUMMARY || buildSummary();
+  LAST_SUMMARY = sum;
+
+  const txt = buildWhatsAppText(sum);
+  navigator.clipboard.writeText(txt);
+  alert('Resumen copiado. Pégalo en WhatsApp si quieres.');
 }
 
 /* ==========================
@@ -694,17 +758,11 @@ function imprimirPDF(){
   if(!payload.title) payload.title = 'REPARTO';
 
   initStateFromPayload();
-
-  // cargar guardado local si existe
   loadPersisted();
 
-  // render
   render();
-
-  // primera persistencia (crea key y asegura base)
   persistSoon();
 
-  // guardar al cerrar / background
   window.addEventListener('beforeunload', ()=>{ try{ persistNow(); }catch{} });
   document.addEventListener('visibilitychange', ()=>{
     if(document.visibilityState==='hidden'){ try{ persistNow(); }catch{} }

@@ -3,574 +3,712 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-  <title>ARSLAN — Modo Repartidor</title>
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+  <title>ARSLAN REPARTO — Repartidor</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+
+  <!-- LZString (para leer ?data= comprimido) -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/lz-string/1.5.0/lz-string.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+
   <style>
     :root{
-      --bg:#fff; --ink:#111827; --muted:#6b7280; --border:#e5e7eb; --panel:#f8fafc;
-      --kiwi:#16a34a; --kiwi2:#15803d; --bad:#dc2626; --shadow:0 2px 10px rgba(0,0,0,.06);
+      --bg:#ffffff; --ink:#0f172a; --muted:#64748b;
+      --panel:#f8fafc; --border:#e2e8f0;
+      --kiwi:#16a34a; --kiwi2:#15803d;
+      --bad:#dc2626; --warn:#f59e0b;
+      --shadow:0 2px 10px rgba(0,0,0,.06);
     }
     [data-theme="dark"]{
-      --bg:#0b0f14; --ink:#e5e7eb; --muted:#9aa0a6; --border:#1f2937; --panel:#111827; --shadow:0 2px 12px rgba(0,0,0,.35);
+      --bg:#0b0f14; --ink:#e5e7eb; --muted:#9aa0a6;
+      --panel:#111827; --border:#1f2937;
+      --shadow:0 2px 14px rgba(0,0,0,.35);
     }
     *{box-sizing:border-box}
     html,body{height:100%}
-    body{margin:0;font-family:Poppins,sans-serif;background:var(--bg);color:var(--ink)}
+    body{
+      font-family:Poppins,system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Noto Sans,sans-serif;
+      margin:0; background:var(--bg); color:var(--ink);
+    }
     .topbar{
-      position:sticky;top:0;z-index:10;background:var(--bg);border-bottom:1px solid var(--border);
-      padding:10px 12px;display:flex;align-items:center;justify-content:space-between;gap:10px;
-      backdrop-filter:saturate(1.2) blur(6px);
+      position:sticky; top:0; z-index:50;
+      background:var(--bg); border-bottom:1px solid var(--border);
+      display:flex; align-items:center; justify-content:space-between; gap:10px;
+      padding:10px 12px; backdrop-filter:saturate(1.2) blur(6px);
     }
-    .title{font-weight:700}
-    .pill{font-size:12px;color:var(--muted);border:1px solid var(--border);background:var(--panel);padding:3px 8px;border-radius:999px;white-space:nowrap}
+    .title{
+      display:flex; flex-direction:column; gap:2px;
+      line-height:1.1;
+    }
+    .title b{font-size:15px}
+    .title span{font-size:12px; color:var(--muted)}
     .btn{
-      border:1px solid var(--border);background:var(--panel);color:var(--ink);
-      padding:8px 10px;border-radius:12px;cursor:pointer;font-size:13px;
+      border:1px solid var(--border); background:var(--panel);
+      color:var(--ink); padding:8px 10px; border-radius:12px;
+      cursor:pointer; font-size:13px;
     }
-    .btn.primary{border:1px solid var(--kiwi);background:linear-gradient(135deg,var(--kiwi) 0%, var(--kiwi2) 100%);color:#fff}
-    .btn.bad{border:1px solid var(--bad);background:var(--bad);color:#fff}
-    .wrap{padding:12px;max-width:980px;margin:0 auto;padding-bottom:86px}
-    .card{border:1px solid var(--border);border-radius:16px;background:var(--bg);box-shadow:var(--shadow);margin-bottom:12px;overflow:hidden}
-    .hd{padding:10px 12px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
-    .bd{padding:10px 12px}
-    .hint{font-size:12px;color:var(--muted)}
-    .destinations{display:flex;gap:8px;flex-wrap:wrap}
-    .chip{
-      border:1px solid var(--border);background:var(--panel);color:var(--ink);
-      padding:8px 10px;border-radius:999px;cursor:pointer;font-size:13px;
+    .btn.primary{
+      border:1px solid var(--kiwi);
+      background:linear-gradient(135deg,var(--kiwi) 0%, var(--kiwi2) 100%);
+      color:#fff;
     }
-    .chip.active{border-color:var(--kiwi);background:rgba(22,163,74,.12);color:var(--kiwi)}
-    table{width:100%;border-collapse:collapse}
-    th,td{border-bottom:1px solid var(--border);padding:10px 8px;text-align:left;vertical-align:top}
-    th{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
-    .qty{font-weight:700}
-    .row-done td{opacity:.65}
-    .footerbar{
-      position:fixed;left:0;right:0;bottom:0;background:var(--bg);border-top:1px solid var(--border);
-      padding:10px 12px;display:flex;gap:8px;justify-content:space-between;align-items:center;flex-wrap:wrap
+    .btn.danger{
+      border:1px solid #fecaca; background:#fee2e2; color:#991b1b;
     }
-    .group{display:flex;gap:8px;flex-wrap:wrap}
-    .sep{height:1px;background:var(--border);margin:10px 0}
-    textarea{
-      width:100%;min-height:140px;border:1px solid var(--border);border-radius:12px;padding:10px;
-      background:var(--bg);color:var(--ink);font-size:13px;resize:vertical
+    [data-theme="dark"] .btn.danger{ background:#2b0d0d; border-color:#7f1d1d; color:#fecaca; }
+
+    .container{ padding:12px 12px 90px; max-width:980px; margin:0 auto; }
+    .card{
+      border:1px solid var(--border); background:var(--bg);
+      border-radius:16px; box-shadow:var(--shadow); overflow:hidden;
+      margin-bottom:12px;
     }
-    input[type="checkbox"]{transform:scale(1.2)}
-    .mini{font-size:12px;color:var(--muted)}
-    .photoPreview{max-width:100%;border-radius:14px;border:1px solid var(--border);display:none;margin-top:8px}
+    .card .hd{
+      display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap;
+      padding:10px 12px; border-bottom:1px solid var(--border);
+      background:linear-gradient(180deg, rgba(22,163,74,.08), rgba(0,0,0,0));
+    }
+    .card .hd strong{font-size:14px}
+    .card .bd{ padding:10px 12px; }
+
+    .pill{
+      display:inline-flex; align-items:center; gap:6px;
+      font-size:12px; color:var(--muted);
+      background:var(--panel); border:1px solid var(--border);
+      padding:4px 8px; border-radius:999px;
+      white-space:nowrap;
+    }
+    .pill.ok{ border-color:#bbf7d0; background:#ecfdf5; color:#166534; }
+    .pill.bad{ border-color:#fecaca; background:#fee2e2; color:#991b1b; }
+    [data-theme="dark"] .pill.ok{ background:#052e1a; border-color:#14532d; color:#86efac; }
+    [data-theme="dark"] .pill.bad{ background:#2b0d0d; border-color:#7f1d1d; color:#fecaca; }
+
+    .dest-grid{
+      display:grid; grid-template-columns:1fr; gap:12px;
+    }
+    @media(min-width:900px){
+      .dest-grid{ grid-template-columns:1fr 1fr; }
+    }
+
+    table{ width:100%; border-collapse:collapse; }
+    th,td{ border-bottom:1px solid var(--border); padding:10px 8px; vertical-align:top; }
+    th{ font-size:12px; color:var(--muted); text-transform:uppercase; letter-spacing:.05em; }
+    td{ font-size:14px; }
+    .muted{ color:var(--muted); font-size:12px; }
+    .row-actions{ display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+
+    .check{
+      width:18px; height:18px; accent-color: var(--kiwi);
+      transform: translateY(2px);
+    }
+
+    .photo-wrap{
+      display:flex; flex-direction:column; gap:10px;
+      border-top:1px dashed var(--border);
+      margin-top:10px; padding-top:10px;
+    }
+    .photos{
+      display:grid; grid-template-columns:repeat(3, 1fr); gap:8px;
+    }
+    @media(min-width:700px){
+      .photos{ grid-template-columns:repeat(4, 1fr); }
+    }
+    .ph{
+      border:1px solid var(--border); border-radius:12px;
+      background:var(--panel); overflow:hidden; position:relative;
+      min-height:82px;
+      display:flex; align-items:center; justify-content:center;
+    }
+    .ph img{
+      width:100%; height:100%; object-fit:cover; display:block;
+    }
+    .ph .rm{
+      position:absolute; top:6px; right:6px;
+      border:none; background:rgba(0,0,0,.55); color:#fff;
+      width:28px; height:28px; border-radius:10px; cursor:pointer;
+      font-size:14px;
+    }
+
+    /* Panel resumen */
+    .summary{
+      display:none;
+    }
+    .summary.show{ display:block; }
+    .summary h2{ margin:0 0 6px; font-size:16px; }
+    .summary .sub{ margin:0 0 10px; color:var(--muted); font-size:12px; }
+    .grid2{ display:grid; grid-template-columns:1fr; gap:12px; }
+    @media(min-width:900px){ .grid2{ grid-template-columns:1fr 1fr; } }
+
+    /* Para imprimir como PDF */
+    @media print{
+      .topbar, .no-print{ display:none !important; }
+      body{ background:#fff; color:#000; }
+      .card{ box-shadow:none; }
+      .container{ padding:0; max-width:none; }
+      .summary{ display:block !important; }
+      .card .hd{ background:none; }
+      a[href]:after{ content:""; }
+    }
   </style>
 </head>
 <body>
-  <div class="topbar">
-    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-      <div class="title">🚚 ARSLAN — Modo Repartidor</div>
-      <span class="pill" id="pillDate"></span>
-      <span class="pill" id="pillCount"></span>
+  <div class="topbar no-print">
+    <div class="title">
+      <b>🚚 ARSLAN REPARTO — Repartidor</b>
+      <span id="metaLine">Cargando…</span>
     </div>
-    <div class="group">
-      <button class="btn" id="btnTheme">🌗 Tema</button>
-      <button class="btn" onclick="openImport()">📥 Importar</button>
+    <div class="row-actions">
+      <button class="btn" onclick="toggleTheme()">🌗 Tema</button>
+      <button class="btn" onclick="expandAll(true)">⬇️ Abrir todo</button>
+      <button class="btn" onclick="expandAll(false)">⬆️ Cerrar todo</button>
+      <button class="btn danger" onclick="limpiarRepartoHoy()">🧹 Limpiar reparto de hoy</button>
+      <button class="btn primary" onclick="finalizarReparto()">✅ Finalizar reparto</button>
+      <button class="btn" onclick="imprimirPDF()">🧾 PDF (Imprimir)</button>
     </div>
   </div>
 
-  <div class="wrap">
-    <div class="card" id="cardImport" style="display:none">
+  <div class="container">
+    <div class="card no-print" id="helpCard">
       <div class="hd">
-        <strong>📥 Importar reparto (si no viene por link)</strong>
-        <button class="btn" onclick="closeImport()">Cerrar</button>
+        <strong>Cómo usar</strong>
+        <span class="pill" id="persistPill">💾 Guardando…</span>
       </div>
       <div class="bd">
-        <div class="hint">Pega aquí el JSON del reparto (te lo puede dar tu app) y pulsa “Cargar”.</div>
-        <textarea id="importTxt" placeholder='{"dateISO":"2026-01-14","destinations":[...]}'></textarea>
-        <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap">
-          <button class="btn primary" onclick="importFromTextarea()">Cargar</button>
-          <button class="btn" onclick="clearLocal()">🧹 Limpiar (solo reparto)</button>
-        </div>
-        <div class="mini" style="margin-top:6px">Nota: esto no toca tu vocabulario ni nada. Solo esta página.</div>
-      </div>
-    </div>
-
-    <div class="card">
-      <div class="hd">
-        <strong>📍 Destinos</strong>
-        <span class="hint">Toca un destino para ver su checklist.</span>
-      </div>
-      <div class="bd">
-        <div class="destinations" id="destBar"></div>
-        <div class="sep"></div>
-        <div id="destInfo" class="hint"></div>
-      </div>
-    </div>
-
-    <div class="card">
-      <div class="hd">
-        <strong id="destTitle">Checklist</strong>
-        <div class="group">
-          <button class="btn" onclick="toggleAll(true)">✅ Marcar todo</button>
-          <button class="btn" onclick="toggleAll(false)">⬜ Desmarcar todo</button>
-          <button class="btn" onclick="takePhoto()">📸 Foto</button>
+        <div class="muted">
+          ✅ Se guarda solo en el móvil (checks + fotos).<br>
+          1) Marca ✔ lo bajado (repartido). <br>
+          2) (Opcional) añade fotos por destino. <br>
+          3) Pulsa <b>Finalizar reparto</b> para ver el resumen global (bajado + pendiente + fotos). <br>
+          4) Pulsa <b>PDF (Imprimir)</b> para guardar como PDF con fotos incrustadas.
         </div>
       </div>
+    </div>
+
+    <div class="dest-grid no-print" id="destWrap"></div>
+
+    <!-- ✅ RESUMEN GLOBAL -->
+    <div class="card summary" id="summaryCard">
+      <div class="hd">
+        <strong>📌 Resumen final</strong>
+        <span class="pill" id="summaryPill">—</span>
+      </div>
       <div class="bd">
-        <div class="hint">Secciones: <b>Repartido</b> y <b>Pendiente</b> en PDF/WhatsApp.</div>
-        <img id="photoPreview" class="photoPreview" alt="Foto del pedido" />
-        <div id="tableWrap" style="margin-top:10px"></div>
+        <h2 id="sumTitle">REPARTO</h2>
+        <p class="sub" id="sumSub"></p>
+
+        <div class="grid2">
+          <div class="card" style="margin:0">
+            <div class="hd"><strong>✅ Bajado</strong><span class="pill ok" id="delCount">0</span></div>
+            <div class="bd" id="deliveredBox"></div>
+          </div>
+          <div class="card" style="margin:0">
+            <div class="hd"><strong>⏳ Pendiente</strong><span class="pill bad" id="pendCount">0</span></div>
+            <div class="bd" id="pendingBox"></div>
+          </div>
+        </div>
+
+        <div class="card" style="margin-top:12px">
+          <div class="hd"><strong>📷 Fotos (todas)</strong></div>
+          <div class="bd" id="photosAllBox"></div>
+        </div>
       </div>
     </div>
-  </div>
 
-  <div class="footerbar">
-    <div class="group">
-      <button class="btn primary" onclick="shareWhatsApp()">📲 WhatsApp</button>
-      <button class="btn" onclick="downloadPDF()">📄 PDF</button>
-      <button class="btn" onclick="copyText()">📋 Copiar texto</button>
-    </div>
-    <div class="group">
-      <span class="pill" id="pillProgress"></span>
-    </div>
   </div>
-
-  <input id="photoInput" type="file" accept="image/*" capture="environment" style="display:none" />
 
 <script>
-/* =========================
-  UTIL
-========================= */
-const $ = (s)=>document.querySelector(s);
-function todayISO(){ return new Date().toISOString().split('T')[0]; }
-function safeJSONParse(t){ try{ return JSON.parse(t); }catch{ return null; } }
-function b64urlToStr(b64u){
-  const b64 = b64u.replace(/-/g,'+').replace(/_/g,'/');
-  const pad = b64.length % 4 ? '='.repeat(4 - (b64.length%4)) : '';
-  return decodeURIComponent(escape(atob(b64+pad)));
-}
-function strToB64url(str){
-  const b64 = btoa(unescape(encodeURIComponent(str)));
-  return b64.replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
-}
-function alertMsg(m){ alert(m); }
-
-/* =========================
-  TEMA
-========================= */
+/* ==========================
+   Tema
+========================== */
 function applyTheme(t){
   document.documentElement.setAttribute('data-theme', t==='dark'?'dark':'light');
   localStorage.setItem('arslan_reparto_theme', t);
 }
-(function(){
-  const saved = localStorage.getItem('arslan_reparto_theme') || 'light';
-  applyTheme(saved);
-  $('#btnTheme').onclick = ()=>{
-    const cur = localStorage.getItem('arslan_reparto_theme') || 'light';
-    applyTheme(cur==='light'?'dark':'light');
-  };
-})();
+function toggleTheme(){
+  const cur = localStorage.getItem('arslan_reparto_theme') || 'light';
+  applyTheme(cur==='light'?'dark':'light');
+}
 
-/* =========================
-  ESTADO (solo de esta página)
-========================= */
-const LS = {
-  LAST: 'arslan_reparto_last_payload',
-  CHECKS: 'arslan_reparto_checks',      // { destId: { itemId: true/false } }
-  PHOTOS: 'arslan_reparto_photos'       // { destId: dataURL }
-};
+/* ==========================
+   Util
+========================== */
+const byId = (id)=>document.getElementById(id);
+const esc = (s)=>String(s||'').replace(/[&<>"']/g, m=>({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[m]));
+function todayISO(){ return new Date().toISOString().split('T')[0]; }
 
+/* ==========================
+   Estado (repartidor)
+   payload esperado:
+   {
+     dateISO, title,
+     destinations: [{ id,label, lines:[{id,name,qty}] }]
+   }
+========================== */
 let payload = null;
-let activeDestId = null;
 
-function getChecks(){ return safeJSONParse(localStorage.getItem(LS.CHECKS)||'{}') || {}; }
-function setChecks(obj){ localStorage.setItem(LS.CHECKS, JSON.stringify(obj||{})); }
-function getPhotos(){ return safeJSONParse(localStorage.getItem(LS.PHOTOS)||'{}') || {}; }
-function setPhotos(obj){ localStorage.setItem(LS.PHOTOS, JSON.stringify(obj||{})); }
+// deliveryState[destId][lineId] = true/false
+const deliveryState = {};
+// photosState[destId] = [{name, dataUrl}]
+const photosState = {};
 
-/* =========================
-  CARGA POR LINK ?data= (LZString + b64url)
-  Formato recomendado del payload:
-  {
-    dateISO:"2026-01-14",
-    title:"REPARTO",
-    destinations:[
-      { id:"STORE_SP", label:"🏪 San Pablo", lines:[{id:"x1", name:"TOMATE", qty:3}] },
-      { id:"CLI_BRASEROS_FORUM", label:"🏨 Braseros — Forum", lines:[...] }
-    ]
+// UI Persist pill
+function setPersist(text){
+  const p = byId('persistPill');
+  if(p) p.textContent = text;
+}
+
+/* ==========================
+   Persistencia localStorage (por día / reparto)
+========================== */
+const LS_PREFIX = 'arslan_reparto_v1';
+function safeJsonParse(s){
+  try{ return JSON.parse(s); }catch{ return null; }
+}
+function computeRepartoKey(){
+  // Key depende del día + título (y cantidad destinos) para evitar mezclar repartos
+  const date = payload?.dateISO || todayISO();
+  const title = (payload?.title || 'REPARTO').slice(0,60);
+  const dcount = (payload?.destinations?.length || 0);
+  return `${LS_PREFIX}::${date}::${title}::${dcount}`;
+}
+function persistNow(){
+  if(!payload) return;
+  const key = computeRepartoKey();
+  const obj = {
+    v:1,
+    savedAt: Date.now(),
+    deliveryState,
+    photosState
+  };
+  try{
+    localStorage.setItem(key, JSON.stringify(obj));
+    setPersist('💾 Guardado');
+  }catch(e){
+    setPersist('⚠️ Sin espacio para guardar');
   }
-========================= */
-function loadFromURL(){
+}
+let persistTimer = null;
+function persistSoon(){
+  setPersist('💾 Guardando…');
+  clearTimeout(persistTimer);
+  persistTimer = setTimeout(persistNow, 180);
+}
+function loadPersisted(){
+  if(!payload) return false;
+  const key = computeRepartoKey();
+  const raw = localStorage.getItem(key);
+  if(!raw) return false;
+  const obj = safeJsonParse(raw);
+  if(!obj || !obj.deliveryState || !obj.photosState) return false;
+
+  // merge seguro (no romper aunque cambien líneas)
+  Object.keys(obj.deliveryState).forEach(destId=>{
+    if(!deliveryState[destId]) deliveryState[destId] = {};
+    const map = obj.deliveryState[destId] || {};
+    Object.keys(map).forEach(lineId=>{
+      deliveryState[destId][lineId] = !!map[lineId];
+    });
+  });
+  Object.keys(obj.photosState).forEach(destId=>{
+    if(!photosState[destId]) photosState[destId] = [];
+    const arr = Array.isArray(obj.photosState[destId]) ? obj.photosState[destId] : [];
+    // validamos dataUrl básico
+    photosState[destId] = arr.filter(x=>x && typeof x.dataUrl==='string' && x.dataUrl.startsWith('data:image/')).map(x=>({
+      name: String(x.name||'foto'),
+      dataUrl: x.dataUrl
+    }));
+  });
+
+  setPersist('💾 Reparto recuperado');
+  return true;
+}
+function limpiarRepartoHoy(){
+  if(!payload){ alert('Sin datos.'); return; }
+  if(!confirm('¿Seguro? Esto borra checks y fotos SOLO de este reparto de hoy.')) return;
+
+  // reset states según payload actual
+  payload.destinations.forEach(d=>{
+    deliveryState[d.id] = {};
+    photosState[d.id] = [];
+    d.lines.forEach(ln=> deliveryState[d.id][ln.id] = false);
+  });
+
+  // borrar key
+  const key = computeRepartoKey();
+  localStorage.removeItem(key);
+
+  // ocultar resumen si estaba
+  byId('summaryCard').classList.remove('show');
+
+  setPersist('🧹 Reparto limpio');
+  render();
+}
+
+/* ==========================
+   Payload decode
+========================== */
+function getUrlDataParam(){
   const u = new URL(location.href);
-  const data = u.searchParams.get('data');
-  if(!data) return null;
-
-  // data = b64url( LZString.compressToUTF16(json) ) también valdría,
-  // pero aquí usamos: b64url( jsonCompressed ) simple:
-  // -> (más robusto) b64url(LZString.compressToBase64(json))… pero Base64 ya…
-  // Usamos: b64url( LZString.compressToEncodedURIComponent(json) ) (aún mejor)
+  return u.searchParams.get('data');
+}
+function decodePayload(){
+  const packed = getUrlDataParam();
+  if(!packed) return null;
   try{
-    // si viene como encodedURIComponent compressed:
-    const json = LZString.decompressFromEncodedURIComponent(data);
-    if(json){
-      return safeJSONParse(json);
-    }
-  }catch{}
-
-  // fallback b64url de JSON puro
-  try{
-    const raw = b64urlToStr(data);
-    const obj = safeJSONParse(raw);
-    if(obj) return obj;
-  }catch{}
-  return null;
-}
-
-function loadFromLocal(){
-  const raw = localStorage.getItem(LS.LAST);
-  if(!raw) return null;
-  return safeJSONParse(raw);
-}
-
-function setPayload(obj){
-  payload = obj;
-  localStorage.setItem(LS.LAST, JSON.stringify(obj));
-  renderAll();
-}
-
-function openImport(){ $('#cardImport').style.display='block'; }
-function closeImport(){ $('#cardImport').style.display='none'; }
-function importFromTextarea(){
-  const obj = safeJSONParse($('#importTxt').value||'');
-  if(!obj || !Array.isArray(obj.destinations)){ alertMsg('JSON inválido o sin destinations.'); return; }
-  setPayload(obj);
-  closeImport();
-}
-function clearLocal(){
-  if(!confirm('¿Limpiar checks/fotos/reparto guardado en este móvil?')) return;
-  localStorage.removeItem(LS.LAST);
-  localStorage.removeItem(LS.CHECKS);
-  localStorage.removeItem(LS.PHOTOS);
-  alertMsg('Reparto local limpiado.');
-  location.href = location.pathname; // sin query
-}
-
-/* =========================
-  RENDER
-========================= */
-function renderAll(){
-  const date = (payload && payload.dateISO) ? payload.dateISO : todayISO();
-  $('#pillDate').textContent = `📅 ${date}`;
-
-  const dests = (payload && Array.isArray(payload.destinations)) ? payload.destinations : [];
-  $('#pillCount').textContent = `Destinos: ${dests.length}`;
-
-  renderDestBar(dests);
-
-  if(!activeDestId && dests.length) activeDestId = dests[0].id;
-  if(activeDestId) renderActive();
-  else {
-    $('#destInfo').textContent = 'No hay destinos. Importa reparto o usa un link generado por la app.';
-    $('#tableWrap').innerHTML = '<div class="hint">Sin datos.</div>';
-    $('#pillProgress').textContent = '0/0';
+    const json = LZString.decompressFromEncodedURIComponent(packed);
+    if(!json) return null;
+    const obj = JSON.parse(json);
+    if(!obj || !Array.isArray(obj.destinations)) return null;
+    return obj;
+  }catch(e){
+    return null;
   }
 }
 
-function renderDestBar(dests){
-  const bar = $('#destBar');
-  bar.innerHTML = '';
-  if(!dests.length){
-    bar.innerHTML = '<span class="hint">Sin destinos todavía.</span>';
+/* ==========================
+   Init base state from payload
+========================== */
+function initStateFromPayload(){
+  payload.destinations.forEach(d=>{
+    if(!deliveryState[d.id]) deliveryState[d.id] = {};
+    if(!photosState[d.id]) photosState[d.id] = [];
+    d.lines.forEach(ln=>{
+      if(typeof deliveryState[d.id][ln.id] !== 'boolean') deliveryState[d.id][ln.id] = false;
+    });
+  });
+}
+
+/* ==========================
+   Render destinos
+========================== */
+function render(){
+  if(!payload){
+    byId('metaLine').textContent = '⚠️ Sin datos. Abre este link desde la app de pedidos.';
+    byId('destWrap').innerHTML = '';
     return;
   }
-  dests.forEach(d=>{
-    const b = document.createElement('button');
-    b.className = 'chip' + (d.id===activeDestId ? ' active':'');
-    b.textContent = d.label || d.id;
-    b.onclick = ()=>{ activeDestId = d.id; renderAll(); };
-    bar.appendChild(b);
-  });
-}
 
-function getActiveDest(){
-  if(!payload || !payload.destinations) return null;
-  return payload.destinations.find(d=>d.id===activeDestId) || null;
-}
+  const meta = `${payload.title || 'REPARTO'} · ${payload.dateISO || todayISO()} · Destinos: ${payload.destinations.length}`;
+  byId('metaLine').textContent = meta;
 
-function renderActive(){
-  const d = getActiveDest();
-  if(!d){ $('#tableWrap').innerHTML = '<div class="hint">Destino no encontrado.</div>'; return; }
+  const wrap = byId('destWrap');
+  wrap.innerHTML = '';
 
-  $('#destTitle').textContent = d.label || d.id;
-  $('#destInfo').textContent = `Líneas: ${(d.lines||[]).length}`;
+  payload.destinations.forEach((d,di)=>{
+    const totalLines = d.lines.length;
+    const done = d.lines.filter(ln => deliveryState[d.id]?.[ln.id]).length;
 
-  // foto preview
-  const photos = getPhotos();
-  const img = $('#photoPreview');
-  if(photos[d.id]){
-    img.src = photos[d.id];
-    img.style.display = 'block';
-  }else{
-    img.src = '';
-    img.style.display = 'none';
-  }
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.dataset.dest = d.id;
 
-  const checks = getChecks();
-  const destChecks = checks[d.id] || {};
-
-  const lines = Array.isArray(d.lines) ? d.lines : [];
-  let done = 0;
-  let html = '<table><thead><tr><th></th><th>Producto</th><th>Cant.</th></tr></thead><tbody>';
-  lines.forEach((it)=>{
-    const itemId = it.id || (it.name + '|' + it.qty);
-    const isChecked = !!destChecks[itemId];
-    if(isChecked) done++;
-    html += `
-      <tr class="${isChecked?'row-done':''}">
-        <td style="width:44px">
-          <input type="checkbox" ${isChecked?'checked':''}
-            onchange="toggleItem('${d.id}', '${cssEscape(itemId)}', this.checked)">
-        </td>
-        <td>${escapeHtml(it.name||'')}</td>
-        <td class="qty">${escapeHtml(String(it.qty??''))}</td>
-      </tr>
+    const hd = document.createElement('div');
+    hd.className = 'hd';
+    hd.innerHTML = `
+      <strong>${esc(d.label)}</strong>
+      <div class="row-actions">
+        <span class="pill ${done===totalLines?'ok':''}">✔ ${done}/${totalLines}</span>
+        <button class="btn" onclick="markAll('${d.id}', true)">Marcar todo</button>
+        <button class="btn" onclick="markAll('${d.id}', false)">Desmarcar</button>
+        <button class="btn" onclick="toggleDest('${d.id}')">Ver/ocultar</button>
+      </div>
     `;
+
+    const bd = document.createElement('div');
+    bd.className = 'bd';
+    bd.id = `bd_${d.id}`;
+
+    bd.innerHTML = `
+      <div class="muted" style="margin-bottom:8px">Marca lo bajado. Lo no marcado quedará como pendiente en el resumen.</div>
+      <div style="overflow-x:auto">
+        <table>
+          <thead>
+            <tr>
+              <th style="width:64px">✔</th>
+              <th>Producto</th>
+              <th style="width:120px">Cantidad</th>
+            </tr>
+          </thead>
+          <tbody id="tb_${d.id}"></tbody>
+        </table>
+      </div>
+
+      <div class="photo-wrap">
+        <div class="row-actions">
+          <span class="pill">📷 Fotos destino</span>
+          <input type="file" accept="image/*" capture="environment" multiple
+            id="file_${d.id}" style="display:none" onchange="onAddPhotos('${d.id}', this.files)">
+          <button class="btn primary" onclick="byId('file_${d.id}').click()">Añadir fotos</button>
+          <button class="btn" onclick="clearPhotos('${d.id}')">Borrar fotos</button>
+        </div>
+        <div class="photos" id="ph_${d.id}"></div>
+      </div>
+    `;
+
+    card.appendChild(hd);
+    card.appendChild(bd);
+    wrap.appendChild(card);
+
+    // filas
+    const tb = byId(`tb_${d.id}`);
+    d.lines.forEach(ln=>{
+      const tr = document.createElement('tr');
+      const checked = !!deliveryState[d.id]?.[ln.id];
+      tr.innerHTML = `
+        <td><input class="check" type="checkbox" ${checked?'checked':''}
+          onchange="setDelivered('${d.id}','${ln.id}', this.checked)"></td>
+        <td>${esc(ln.name)}</td>
+        <td><b>${esc(ln.qty)}</b></td>
+      `;
+      tb.appendChild(tr);
+    });
+
+    // fotos
+    renderPhotos(d.id);
   });
-  html += '</tbody></table>';
-  $('#tableWrap').innerHTML = html;
 
-  $('#pillProgress').textContent = `${done}/${lines.length} marcados`;
+  // ocultar resumen hasta finalizar
+  byId('summaryCard').classList.remove('show');
 }
 
-/* helpers safe */
-function escapeHtml(s){
-  return String(s||'').replace(/[&<>"']/g, m=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[m]));
+/* ==========================
+   UI helpers
+========================== */
+function toggleDest(destId){
+  const bd = byId(`bd_${destId}`);
+  if(!bd) return;
+  bd.style.display = (bd.style.display==='none') ? 'block' : 'none';
 }
-function cssEscape(s){
-  return String(s).replace(/\\/g,'\\\\').replace(/'/g,"\\'");
-}
-
-/* =========================
-  CHECKS
-========================= */
-function toggleItem(destId, itemIdEscaped, checked){
-  // itemIdEscaped viene escapado para HTML, lo recuperamos simple:
-  const itemId = itemIdEscaped.replace(/\\'/g,"'").replace(/\\\\/g,'\\');
-
-  const checks = getChecks();
-  if(!checks[destId]) checks[destId] = {};
-  checks[destId][itemId] = !!checked;
-  setChecks(checks);
-  renderActive();
+function expandAll(open){
+  payload?.destinations?.forEach(d=>{
+    const bd = byId(`bd_${d.id}`);
+    if(bd) bd.style.display = open ? 'block' : 'none';
+  });
 }
 
-function toggleAll(flag){
-  const d = getActiveDest();
+/* ==========================
+   Checks (persistente)
+========================== */
+function setDelivered(destId, lineId, val){
+  if(!deliveryState[destId]) deliveryState[destId] = {};
+  deliveryState[destId][lineId] = !!val;
+  persistSoon();
+  render();
+}
+function markAll(destId, val){
+  const d = payload.destinations.find(x=>x.id===destId);
   if(!d) return;
-  const checks = getChecks();
-  if(!checks[d.id]) checks[d.id] = {};
-  const destChecks = checks[d.id];
-  (d.lines||[]).forEach(it=>{
-    const itemId = it.id || (it.name + '|' + it.qty);
-    destChecks[itemId] = !!flag;
-  });
-  checks[d.id] = destChecks;
-  setChecks(checks);
-  renderActive();
+  if(!deliveryState[destId]) deliveryState[destId] = {};
+  d.lines.forEach(ln=> deliveryState[destId][ln.id] = !!val);
+  persistSoon();
+  render();
 }
 
-/* =========================
-  FOTO (OPCIONAL)
-========================= */
-function takePhoto(){
-  const d = getActiveDest();
-  if(!d){ alertMsg('Selecciona un destino.'); return; }
-  const inp = $('#photoInput');
-  inp.value = '';
-  inp.onchange = async ()=>{
-    const file = inp.files && inp.files[0];
-    if(!file) return;
+/* ==========================
+   Fotos (persistente) por destino
+========================== */
+function onAddPhotos(destId, files){
+  if(!files || !files.length) return;
+  const arr = Array.from(files);
 
-    // convert to dataURL (simple)
-    const reader = new FileReader();
-    reader.onload = ()=>{
-      const photos = getPhotos();
-      photos[d.id] = reader.result; // dataURL
-      setPhotos(photos);
-      renderActive();
-      alertMsg('Foto guardada en este móvil para este destino.');
-    };
-    reader.readAsDataURL(file);
-  };
-  inp.click();
-}
-
-/* =========================
-  PDF (Repartido / Pendiente)
-========================= */
-function buildListsForActive(){
-  const d = getActiveDest();
-  if(!d) return { d:null, done:[], pending:[] };
-
-  const checks = getChecks();
-  const destChecks = checks[d.id] || {};
-
-  const done = [];
-  const pending = [];
-  (d.lines||[]).forEach(it=>{
-    const itemId = it.id || (it.name + '|' + it.qty);
-    const row = { name: it.name||'', qty: it.qty??'' };
-    if(destChecks[itemId]) done.push(row); else pending.push(row);
-  });
-  return { d, done, pending };
-}
-
-async function makePDFBlob(){
-  const { d, done, pending } = buildListsForActive();
-  if(!d){ alertMsg('Selecciona un destino.'); return null; }
-
-  const { jsPDF } = window.jspdf;
-  const doc = new jsPDF({unit:'pt', format:'a4'});
-  const margin = 36;
-  let y = margin;
-
-  doc.setFont('helvetica','bold');
-  doc.setFontSize(14);
-  doc.text(`REPARTO — ${d.label || d.id}`, margin, y); y += 18;
-
-  doc.setFont('helvetica','normal');
-  doc.setFontSize(10);
-  doc.text(`Fecha: ${(payload && payload.dateISO) ? payload.dateISO : todayISO()}`, margin, y); y += 14;
-
-  doc.setFont('helvetica','bold'); doc.setFontSize(12);
-  doc.text(`REPARTIDO (${done.length})`, margin, y); y += 8;
-
-  doc.autoTable({
-    startY: y,
-    head: [['Producto','Cantidad']],
-    body: done.map(x=>[String(x.name), String(x.qty)]),
-    styles: { fontSize: 9, cellPadding: 6 },
-    headStyles: { fillColor: [22,163,74] },
-    margin: { left: margin, right: margin }
-  });
-  y = doc.lastAutoTable.finalY + 16;
-
-  doc.setFont('helvetica','bold'); doc.setFontSize(12);
-  doc.text(`PENDIENTE (${pending.length})`, margin, y); y += 8;
-
-  doc.autoTable({
-    startY: y,
-    head: [['Producto','Cantidad']],
-    body: pending.map(x=>[String(x.name), String(x.qty)]),
-    styles: { fontSize: 9, cellPadding: 6 },
-    headStyles: { fillColor: [220,38,38] },
-    margin: { left: margin, right: margin }
-  });
-
-  return doc.output('blob');
-}
-
-async function downloadPDF(){
-  const blob = await makePDFBlob();
-  if(!blob) return;
-  const d = getActiveDest();
-  const name = (d && (d.label||d.id)) ? (d.label||d.id).replace(/[^\w\s\-áéíóúÁÉÍÓÚñÑ]/g,'').trim() : 'destino';
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = `reparto_${name}_${(payload&&payload.dateISO)?payload.dateISO:todayISO()}.pdf`;
-  a.click();
-}
-
-/* =========================
-  WHATSAPP (compartir PDF + foto si el móvil lo permite)
-  Nota: no se puede "forzar" enviar a un número con adjunto desde web.
-========================= */
-async function shareWhatsApp(){
-  const d = getActiveDest();
-  if(!d){ alertMsg('Selecciona un destino.'); return; }
-
-  const blob = await makePDFBlob();
-  if(!blob) return;
-
-  const photos = getPhotos();
-  const photoDataURL = photos[d.id] || null;
-  const files = [];
-
-  const safeName = (d.label||d.id).replace(/[^\w\s\-áéíóúÁÉÍÓÚñÑ]/g,'').trim() || 'destino';
-  files.push(new File([blob], `reparto_${safeName}_${(payload&&payload.dateISO)?payload.dateISO:todayISO()}.pdf`, {type:'application/pdf'}));
-
-  if(photoDataURL){
-    const photoBlob = dataURLtoBlob(photoDataURL);
-    files.push(new File([photoBlob], `foto_${safeName}_${(payload&&payload.dateISO)?payload.dateISO:todayISO()}.jpg`, {type:'image/jpeg'}));
-  }
-
-  const { done, pending } = buildListsForActive();
-  const msg = `🚚 Reparto ${d.label||d.id} — ${(payload&&payload.dateISO)?payload.dateISO:todayISO()}\n✅ Repartido: ${done.length}\n⏳ Pendiente: ${pending.length}`;
-
-  // Web Share (móvil): adjunta archivos y eliges WhatsApp
-  if(navigator.canShare && navigator.canShare({files})){
-    try{
-      await navigator.share({ files, text: msg, title: `Reparto ${d.label||d.id}` });
+  let i=0;
+  function next(){
+    if(i>=arr.length){
+      renderPhotos(destId);
+      persistSoon();
       return;
-    }catch(e){
-      // usuario canceló o fallo
     }
+    const f = arr[i++];
+    const r = new FileReader();
+    r.onload = ()=>{
+      if(!photosState[destId]) photosState[destId]=[];
+      photosState[destId].push({
+        name: f.name || ('foto_'+Date.now()+'.jpg'),
+        dataUrl: r.result
+      });
+      next();
+    };
+    r.readAsDataURL(f);
   }
-
-  // fallback: abre WhatsApp con texto (sin adjuntos) + descarga PDF
-  await downloadPDF();
-  window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
+  next();
 }
 
-function dataURLtoBlob(dataURL){
-  const parts = dataURL.split(',');
-  const mime = parts[0].match(/:(.*?);/)[1] || 'image/jpeg';
-  const bstr = atob(parts[1]);
-  let n = bstr.length;
-  const u8 = new Uint8Array(n);
-  while(n--) u8[n] = bstr.charCodeAt(n);
-  return new Blob([u8], {type:mime});
+function renderPhotos(destId){
+  const box = byId(`ph_${destId}`);
+  if(!box) return;
+  const list = photosState[destId] || [];
+  if(!list.length){
+    box.innerHTML = `<div class="muted">Sin fotos.</div>`;
+    return;
+  }
+  box.innerHTML = '';
+  list.forEach((p,idx)=>{
+    const d = document.createElement('div');
+    d.className = 'ph';
+    d.innerHTML = `
+      <img src="${p.dataUrl}" alt="${esc(p.name)}">
+      <button class="rm" title="Quitar" onclick="removePhoto('${destId}', ${idx})">✕</button>
+    `;
+    box.appendChild(d);
+  });
 }
 
-/* =========================
-  COPIAR TEXTO (repartido + pendiente)
-========================= */
-function copyText(){
-  const d = getActiveDest();
-  if(!d){ alertMsg('Selecciona un destino.'); return; }
-  const { done, pending } = buildListsForActive();
-
-  let out = `REPARTO — ${d.label||d.id} (${(payload&&payload.dateISO)?payload.dateISO:todayISO()})\n\n`;
-  out += `REPARTIDO:\n`;
-  if(done.length) done.forEach(x=> out += `- ${x.qty} ${x.name}\n`);
-  else out += `- (nada)\n`;
-  out += `\nPENDIENTE:\n`;
-  if(pending.length) pending.forEach(x=> out += `- ${x.qty} ${x.name}\n`);
-  else out += `- (nada)\n`;
-
-  navigator.clipboard.writeText(out);
-  alertMsg('Texto copiado.');
+function removePhoto(destId, idx){
+  const list = photosState[destId] || [];
+  list.splice(idx,1);
+  photosState[destId] = list;
+  renderPhotos(destId);
+  persistSoon();
 }
 
-/* =========================
-  INIT
-========================= */
+function clearPhotos(destId){
+  if(!confirm('¿Borrar todas las fotos de este destino?')) return;
+  photosState[destId] = [];
+  renderPhotos(destId);
+  persistSoon();
+}
+
+/* ==========================
+   ✅ FINALIZAR REPARTO
+   Resumen global: bajado + pendiente + fotos (todos destinos)
+========================== */
+function finalizarReparto(){
+  if(!payload){ alert('Sin datos.'); return; }
+
+  const delivered = []; // {dest,label,name,qty}
+  const pending = [];
+  const photosAll = []; // {dest,label,dataUrl}
+
+  payload.destinations.forEach(d=>{
+    d.lines.forEach(ln=>{
+      const ok = !!deliveryState[d.id]?.[ln.id];
+      const row = { destId:d.id, destLabel:d.label, name:ln.name, qty:ln.qty };
+      if(ok) delivered.push(row);
+      else pending.push(row);
+    });
+
+    (photosState[d.id] || []).forEach(ph=>{
+      photosAll.push({ destId:d.id, destLabel:d.label, dataUrl:ph.dataUrl, name:ph.name });
+    });
+  });
+
+  byId('summaryPill').textContent = `✅ Bajado ${delivered.length} · ⏳ Pendiente ${pending.length} · 📷 Fotos ${photosAll.length}`;
+  byId('sumTitle').textContent = payload.title || 'REPARTO';
+  byId('sumSub').textContent = `${payload.dateISO || todayISO()} · Destinos ${payload.destinations.length}`;
+
+  byId('delCount').textContent = delivered.length;
+  byId('pendCount').textContent = pending.length;
+
+  byId('deliveredBox').innerHTML = renderSummaryTable(delivered, true);
+  byId('pendingBox').innerHTML = renderSummaryTable(pending, false);
+  byId('photosAllBox').innerHTML = renderPhotosAll(photosAll);
+
+  byId('summaryCard').classList.add('show');
+  byId('summaryCard').scrollIntoView({behavior:'smooth', block:'start'});
+}
+
+function renderSummaryTable(rows, isOk){
+  if(!rows.length) return `<div class="muted">${isOk?'Nada bajado.':'Nada pendiente.'}</div>`;
+
+  const map = new Map();
+  rows.forEach(r=>{
+    if(!map.has(r.destLabel)) map.set(r.destLabel, []);
+    map.get(r.destLabel).push(r);
+  });
+
+  let out = '';
+  for(const [label, items] of map.entries()){
+    out += `<div class="card" style="margin:0 0 10px; box-shadow:none">
+      <div class="hd" style="border:1px solid var(--border); border-radius:14px; margin-bottom:6px">
+        <strong>${esc(label)}</strong>
+        <span class="pill ${isOk?'ok':'bad'}">${items.length}</span>
+      </div>
+      <div class="bd" style="padding:0 10px 10px">
+        <div style="overflow-x:auto">
+          <table>
+            <thead>
+              <tr><th>Producto</th><th style="width:120px">Cantidad</th></tr>
+            </thead>
+            <tbody>
+              ${items.map(x=>`<tr><td>${esc(x.name)}</td><td><b>${esc(x.qty)}</b></td></tr>`).join('')}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>`;
+  }
+  return out;
+}
+
+function renderPhotosAll(list){
+  if(!list.length) return `<div class="muted">Sin fotos.</div>`;
+
+  const map = new Map();
+  list.forEach(p=>{
+    if(!map.has(p.destLabel)) map.set(p.destLabel, []);
+    map.get(p.destLabel).push(p);
+  });
+
+  let out = '';
+  for(const [label, items] of map.entries()){
+    out += `<div class="card" style="margin:0 0 12px; box-shadow:none">
+      <div class="hd" style="border:1px solid var(--border); border-radius:14px; margin-bottom:6px">
+        <strong>${esc(label)}</strong>
+        <span class="pill">${items.length}</span>
+      </div>
+      <div class="bd">
+        <div class="photos">
+          ${items.map(p=>`<div class="ph"><img src="${p.dataUrl}" alt="${esc(p.name)}"></div>`).join('')}
+        </div>
+      </div>
+    </div>`;
+  }
+  return out;
+}
+
+/* ==========================
+   PDF (Imprimir)
+========================== */
+function imprimirPDF(){
+  if(payload && !byId('summaryCard').classList.contains('show')){
+    finalizarReparto();
+  }
+  window.print();
+}
+
+/* ==========================
+   INIT
+========================== */
 (function init(){
-  // 1) intentar URL
-  const fromURL = loadFromURL();
-  if(fromURL && Array.isArray(fromURL.destinations)){
-    setPayload(fromURL);
-  }else{
-    // 2) intentar local
-    const fromLocal = loadFromLocal();
-    if(fromLocal && Array.isArray(fromLocal.destinations)){
-      payload = fromLocal;
-      renderAll();
-    }else{
-      // 3) vacío -> pedir importar
-      payload = { dateISO: todayISO(), title:'REPARTO', destinations:[] };
-      renderAll();
-      openImport();
-    }
+  const savedTheme = localStorage.getItem('arslan_reparto_theme') || (matchMedia && matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+  applyTheme(savedTheme);
+
+  payload = decodePayload();
+  if(!payload){
+    byId('metaLine').textContent = '⚠️ Sin datos. Abre este link desde la app de pedidos.';
+    setPersist('⚠️ Sin datos');
+    return;
   }
+  if(!payload.dateISO) payload.dateISO = todayISO();
+  if(!payload.title) payload.title = 'REPARTO';
+
+  initStateFromPayload();
+
+  // cargar guardado local si existe
+  loadPersisted();
+
+  // render
+  render();
+
+  // primera persistencia (crea key y asegura base)
+  persistSoon();
+
+  // guardar al cerrar / background
+  window.addEventListener('beforeunload', ()=>{ try{ persistNow(); }catch{} });
+  document.addEventListener('visibilitychange', ()=>{
+    if(document.visibilityState==='hidden'){ try{ persistNow(); }catch{} }
+  });
 })();
 </script>
 </body>
